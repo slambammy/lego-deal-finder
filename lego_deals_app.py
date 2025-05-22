@@ -1,3 +1,4 @@
+import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -19,7 +20,6 @@ def fetch_walmart_deals():
     res = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(res.text, "html.parser")
     deals = []
-    # Example selectors; you may need to adjust as Walmart updates site
     items = soup.select("div.search-result-gridview-item-wrapper")
     for item in items:
         title_tag = item.select_one("a.product-title-link span")
@@ -78,17 +78,21 @@ def fetch_kohls_deals():
                 deals.append({"title": title_tag.text.strip(), "url": "https://www.kohls.com" + title_tag['href']})
     return deals
 
-def main():
-    all_deals = []
-    all_deals.extend(fetch_walmart_deals())
-    all_deals.extend(fetch_target_deals())
-    all_deals.extend(fetch_bestbuy_deals())
-    all_deals.extend(fetch_kohls_deals())
-    all_deals.extend(fetch_lego_com_deals())
+# Streamlit UI
+st.title("🧱 LEGO Deal Finder - 50% Off or More")
+st.markdown("Searches Walmart, Target, Best Buy, and Kohl’s for LEGO deals at 50% off or more.")
 
-    print(f"Found {len(all_deals)} deals 50% off or more:")
-    for deal in all_deals:
-        print(f"- {deal['title']} -> {deal['url']}")
+if st.button("Find Deals Now"):
+    with st.spinner("Searching for deals..."):
+        all_deals = []
+        all_deals.extend(fetch_walmart_deals())
+        all_deals.extend(fetch_target_deals())
+        all_deals.extend(fetch_bestbuy_deals())
+        all_deals.extend(fetch_kohls_deals())
 
-if __name__ == "__main__":
-    main()
+        if all_deals:
+            st.success(f"Found {len(all_deals)} LEGO deals at 50% off or more:")
+            for deal in all_deals:
+                st.markdown(f"- [{deal['title']}]({deal['url']})")
+        else:
+            st.info("No 50% off LEGO deals found right now. Try again later!")

@@ -78,26 +78,6 @@ def fetch_kohls_deals():
                 deals.append({"title": title_tag.text.strip(), "url": "https://www.kohls.com" + title_tag['href']})
     return deals
 
-import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-def fetch_lego_com_deals():
-    url = "https://www.lego.com/en-us/categories/sales-and-deals"
-    res = requests.get(url, headers=HEADERS, verify=False)  # <-- disable SSL verify here
-    soup = BeautifulSoup(res.text, "html.parser")
-    deals = []
-    items = soup.select("a.product-tile")
-    for item in items:
-        title_tag = item.select_one("h3.product-name")
-        price_current = item.select_one("span.current-price")
-        price_original = item.select_one("span.original-price")
-        if title_tag and price_current and price_original:
-            if is_50_percent_off(price_current.text, price_original.text):
-                link = item['href']
-                deals.append({"title": title_tag.text.strip(), "url": "https://www.lego.com" + link})
-    return deals
-
-
 def main():
     all_deals = []
     all_deals.extend(fetch_walmart_deals())

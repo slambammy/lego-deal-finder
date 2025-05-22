@@ -16,47 +16,34 @@ def is_10_dollars_off(current, original):
         return False
 
 def fetch_walmart_deals():
-    import time
     url = "https://www.walmart.com/search?q=lego"
     res = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(res.text, "html.parser")
-    
-    st.subheader("🔍 Walmart Debug Output")
     deals = []
-    
+
     items = soup.find_all("div", {"data-item-id": True})
-    if not items:
-        st.warning("No items found. Walmart may have blocked the request or changed their layout.")
-        return []
 
     for item in items:
         title_tag = item.find("a", {"class": "absolute w-100 h-100 z-1 hide-sibling-opacity"})
-        title = title_tag.text.strip() if title_tag else "No title"
-
-        # Find all dollar values
         price_spans = item.find_all("span", string=re.compile(r"\$\d"))
-        price_texts = [p.text.strip() for p in price_spans]
-        price_values = [float(re.sub(r"[^\d.]", "", p)) for p in price_texts if re.search(r"\d", p)]
+        prices = [float(re.sub(r"[^\d.]", "", p.text)) for p in price_spans]
 
-        st.write(f"🧱 **{title}** — Found Prices: {price_texts}")
-
-        if len(price_values) >= 2:
-            current_price = min(price_values)
-            original_price = max(price_values)
-            discount = original_price - current_price
-            if discount >= 10:
-                st.success(f"✅ ${discount:.2f} OFF! ${original_price} → ${current_price}")
+        if title_tag and len(prices) >= 2:
+            current_price = min(prices)
+            original_price = max(prices)
+            if original_price > current_price:  # Any discount
+                title = title_tag.text.strip()
+                url_path = title_tag["href"]
                 deals.append({
                     "title": title,
-                    "url": "https://www.walmart.com" + title_tag['href'],
+                    "url": "https://www.walmart.com" + url_path,
                     "current_price": current_price,
                     "original_price": original_price,
-                    "discount": discount
+                    "discount": round(original_price - current_price, 2)
                 })
 
-        time.sleep(0.2)  # Be gentle to avoid being blocked
-
     return deals
+
 
 
 

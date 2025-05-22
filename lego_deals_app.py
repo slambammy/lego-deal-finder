@@ -16,20 +16,37 @@ def is_10_dollars_off(current, original):
         return False
 
 def fetch_walmart_deals():
-    url = "https://www.walmart.com/search/?query=lego"
+    url = "https://www.walmart.com/search?q=lego"
     res = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(res.text, "html.parser")
     deals = []
-    items = soup.select("div.search-result-gridview-item-wrapper")
+
+    items = soup.find_all("div", {"data-item-id": True})
+
     for item in items:
-        title_tag = item.select_one("a.product-title-link span")
-        price_current = item.select_one("span.price-characteristic")
-        price_original = item.select_one("span.price-old")
-        if title_tag and price_current and price_original:
-            if is_10_dollars_off(price_current.text, price_original.text):
-                link = item.select_one("a.product-title-link")['href']
-                deals.append({"title": title_tag.text.strip(), "url": "https://www.walmart.com" + link})
+        title_tag = item.find("a", {"class": "absolute w-100 h-100 z-1 hide-sibling-opacity"})
+        price_block = item.select_one("div.flex.flex-wrap.justify-start.items-center span[class*=price]")
+
+        # Walmart often uses dynamic class names. We'll extract all dollar values.
+        price_texts = item.find_all("span", string=re.compile(r"\$\d"))
+        prices = [float(re.sub(r"[^\d.]", "", p.text)) for p in price_texts]
+
+        if len(prices) >= 2:
+            current_price = min(prices)
+            original_price = max(prices)
+            if original_price - current_price >= 10:
+                title = title_tag.text.strip() if title_tag else "Unknown LEGO Product"
+                url_path = title_tag["href"] if title_tag and "href" in title_tag.attrs else "#"
+                deals.append({
+                    "title": title,
+                    "url": "https://www.walmart.com" + url_path,
+                    "current_price": current_price,
+                    "original_price": original_price,
+                    "discount": round(original_price - current_price, 2)
+                })
+
     return deals
+
 
 def fetch_target_deals():
     url = "https://www.target.com/s?searchTerm=lego"

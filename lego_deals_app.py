@@ -78,9 +78,12 @@ def fetch_kohls_deals():
                 deals.append({"title": title_tag.text.strip(), "url": "https://www.kohls.com" + title_tag['href']})
     return deals
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 def fetch_lego_com_deals():
     url = "https://www.lego.com/en-us/categories/sales-and-deals"
-    res = requests.get(url, headers=HEADERS)
+    res = requests.get(url, headers=HEADERS, verify=False)  # <-- disable SSL verify here
     soup = BeautifulSoup(res.text, "html.parser")
     deals = []
     items = soup.select("a.product-tile")
@@ -93,6 +96,7 @@ def fetch_lego_com_deals():
                 link = item['href']
                 deals.append({"title": title_tag.text.strip(), "url": "https://www.lego.com" + link})
     return deals
+
 
 def main():
     all_deals = []
